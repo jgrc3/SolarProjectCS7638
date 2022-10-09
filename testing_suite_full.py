@@ -89,7 +89,7 @@ GLOBAL_PARAMETERS = [None,
                       'target': ((0.6560702910754909, 0.6560702910754909), 0.012056073017406379),
                       'map_seed': 3193,
                       'measurement_noise': 0,
-                      'max_steps': 300
+                      'max_steps': 1000
                       },
                      # Case 2 also has no noise
                      {'test_case': 2,

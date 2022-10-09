@@ -57,69 +57,88 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
     # search space is [+-4, +-4]
     # randomly generate points 20 radii from 0 - 4
     # stagger 20 points on each radii (200 points total)
+    timer = other
+    objectMeasure = gravimeter_measurement
     samplePoints = []
-    # for i in range(40):
-    #     for j in range(2*i+1):
-    #         radius = (i+1) * 1/5 # this gives us radial distance from sun
-    #         theta = random.random() * 2 * pi # this gives us angle
-    #         x = radius * cos(theta)
-    #         y = radius * sin(theta)
-    #         thisPoint = Particle((x,y))
-    #         samplePoints.append(thisPoint)
-    if not other: # if initial, get 1000 randomk points on grid
-        for i in range(1000):
+    if not timer:
+        # want to initialize 1000 random points near object
+        for i in range(10000):
             randNumX = random.random() * 8 - 4
             randNumY = random.random() * 8 - 4
             thisPoint = Particle((randNumX, randNumY))
             samplePoints.append(thisPoint)
+        # avgWeight = 0
+        # for i in range(500):
+        #     randNumX = random.random() * 8 - 4
+        #     randNumY = random.random() * 8 - 4
+        #     pointBody = Body(r=[AU * randNumX, AU * randNumY], v=[0, 0], mass=0, measurement_noise=00)
+        #     pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+        #     avgWeight += 1 / abs(pointMeasure - objectMeasure)  # take reciprocal s.t. weight large
+        # avgWeight /= 500
+        # for i in range(5000):
+        #     weight = 0
+        #     x = 0
+        #     y = 0
+        #     while weight < avgWeight * 2:
+        #         randNumX = random.random() * 8 - 4
+        #         randNumY = random.random() * 8 - 4
+        #         pointBody = Body(r=[AU * randNumX, AU * randNumY], v=[0, 0], mass=0, measurement_noise=00)
+        #         pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+        #         weight = 1 / abs(pointMeasure - objectMeasure)  # take reciprocal s.t. weight large
+        #     samplePoints.append(Particle((randNumX, randNumY)))
+        time = 0
     else: # initialize as past set
-        for i in range(len(other)):
-                samplePoints.append(Particle(other[i].position))
-        # for i in range(10): # adds random component to points
-        #     radius = random.random() * 4
-        #     theta = random.random() * 2 * pi  # this gives us angle
-        #     x = radius * cos(theta)
-        #     y = radius * sin(theta)
+        for i in range(len(timer.particles)):
+            samplePoints.append(Particle(timer.particles[i].position))
+        # for j in range(100): # adds random component to points
+        #     randRad = random.random() * 4
+        #     randTheta = random.random() * 2 * pi
+        #     x = randRad * cos(randTheta)
+        #     y = randRad * sin(randTheta)
         #     thisPoint = Particle((x, y))
-        #     samplePoints.append(thisPoint)
-    # samplePoints = []
-    # timer = other
-    # if not timer:
-    #     for i in range(20):
-    #         for j in range(20):
-    #             radius = (i+1) * 1/10 # this gives us radial distance from sun
-    #             theta = random.random() * 2 * pi # this gives us angle
-    #             x = radius * cos(theta)
-    #             y = radius * sin(theta)
-    #             thisPoint = Particle((x,y))
-    #             samplePoints.append(thisPoint)
-    #             timer = Timer(0, samplePoints)
-    # else:
-    #     for i in range(len(timer.particles)):
-    #         samplePoints.append(Particle(timer.particles[i].position))
-    #     # for i in range(10): # adds random component to points
-    #     #     radius = random.random() * 4
-    #     #     theta = random.random() * 2 * pi  # this gives us angle
-    #     #     x = radius * cos(theta)
-    #     #     y = radius * sin(theta)
-    #     #     thisPoint = Particle((x, y))
-    #     #     samplePoints.append(thisPoint)
-
-
-
+        #    samplePoints.append(thisPoint)
+        time = timer.time + 1
+        #print(len(samplePoints))
+    #
+    # # samplePoints = []
+    # # timer = other
+    # # if not timer:
+    # #     for i in range(20):
+    # #         for j in range(20):
+    # #             radius = (i+1) * 1/10 # this gives us radial distance from sun
+    # #             theta = random.random() * 2 * pi # this gives us angle
+    # #             x = radius * cos(theta)
+    # #             y = radius * sin(theta)
+    # #             thisPoint = Particle((x,y))
+    # #             samplePoints.append(thisPoint)
+    # #             timer = Timer(0, samplePoints)
+    # # else:
+    # #     for i in range(len(timer.particles)):
+    # #         samplePoints.append(Particle(timer.particles[i].position))
+    # #     # for i in range(10): # adds random component to points
+    # #     #     radius = random.random() * 4
+    # #     #     theta = random.random() * 2 * pi  # this gives us angle
+    # #     #     x = radius * cos(theta)
+    # #     #     y = radius * sin(theta)
+    # #     #     thisPoint = Particle((x, y))
+    # #     #     samplePoints.append(thisPoint)
+    #
+    #
+    #
     # # Step 2 - Assign importance weights - how likely particle is to be object - assign based on gravimeter
     # # first need gravimeter measure
-    objectMeasure = gravimeter_measurement
     # need to assign score to each point -- closer to 0, the closer the score
     for point in samplePoints:
-        pointBody = Body(r=[AU * point.position[0], AU * point.position[1]], v=[0, 0], mass=0, measurement_noise=0)
+        pointBody = Body(r=[AU * point.position[0], AU * point.position[1]], v=[0, 0], mass=0, measurement_noise=00)
         pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
-        point.weight = 1/abs(pointMeasure - objectMeasure) # take reciprocal s.t. weight large
+        ### weight needs to be gaussian!!!
+        point.weight = 1 / abs(pointMeasure - objectMeasure)
+        #point.weight = Gaussian(pointMeasure - objectMeasure, 0.01, objectMeasure)  # take reciprocal s.t. weight large
         point.measure = pointMeasure
         #print(pointMeasure)
-
-
-
+    #
+    #
+    #
     # Step 3 - Resample - generate N new points based on importance weights of last set
     # keep the 25 best particles??? -- take 25 lowest weights, then anything below threshold
     # We need to use importance wheel
@@ -129,78 +148,115 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
         totalWeight += point.weight
 
     # assign norm weights
+    norms = []
     for point in samplePoints:
-        point.normWeight = point.weight / totalWeight
+        weight = point.weight / totalWeight
+        point.normWeight = weight
+        norms.append(point.normWeight)
 
-
+    #print(norms)
     # resampling wheel
+    N = 500
     resampledPoints = []
-    for point in samplePoints:
-        #print(point.weight)
-        if len(resampledPoints) < 25:
-            resampledPoints.append(point)
-        else:
-            minWeight = 10000000000000000000000000000000000000000000
-            thisPoint = 0
-            for addedPoint in resampledPoints:
-                if addedPoint.weight < minWeight:
-                    minWeight = addedPoint.weight
-                    thisPoint = addedPoint
-            if point.weight > minWeight:
-                resampledPoints.remove(thisPoint)
-                resampledPoints.append(point)
-            # elif point.weight < 0.1:
-            #     resampledPoints.append(point)
+    index = int(random.random() * N)
+    beta = 0.0
+    mw = max(norms)
+    for i in range(N):
+        beta += random.random() * 2.0 * mw
+        while norms[index] < beta:
+            beta = beta - norms[index]
+            index = (index + 1) % N
+        resampledPoints.append(samplePoints[index])
 
 
-    # # Generate 400 new points grouped around our resampled particles
+
+    # resampledPoints = []
+    # for point in samplePoints:
+    #     #print(point.weight)
+    #     if len(resampledPoints) < 25:
+    #         resampledPoints.append(point)
+    #     else:
+    #         minWeight = 10000000000000000000000000000000000000000000
+    #         thisPoint = 0
+    #         for addedPoint in resampledPoints:
+    #             if addedPoint.weight < minWeight:
+    #                 minWeight = addedPoint.weight
+    #                 thisPoint = addedPoint
+    #         if point.weight > minWeight:
+    #             resampledPoints.remove(thisPoint)
+    #             resampledPoints.append(point)
+    #         # elif point.weight < 0.1:
+    #         #     resampledPoints.append(point)
+    #
+    #
+    #
+    # Step 4 - Fuzz particles
+    # Generate some noise around particle
+    # normal distribution around each particle???
+    # Generate 400 new points grouped around our resampled particles
     finalParticles = []
-    for point in resampledPoints:
-        finalParticles.append(point)
-        for i in range(4):
-            newPoint = point.gaussianPoint(0.2)
-            pointBody = Body(r=[AU * newPoint.position[0], AU * newPoint.position[1]], v=[0, 0], mass=0, measurement_noise=0)
-            pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
-            newPoint.weight = 1 / abs(pointMeasure - objectMeasure)
-            newPoint.measure = pointMeasure
+    # order points by weight
+    resampledPoints.sort(key=lambda x: x.normWeight, reverse=True)
+
+    for i in range(len(resampledPoints)):
+        numberFuzz = int(10 / (int(i/10 + 1)))
+        finalParticles.append(resampledPoints[i])
+        for j in range(numberFuzz):
+            # newPoint = resampledPoints[i].gaussianPoint(0.2)
+            # pointBody = Body(r=[AU * newPoint.position[0], AU * newPoint.position[1]], v=[0, 0], mass=0,
+            #                  measurement_noise=0)
+            # pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+            # newPoint.weight = 1 / abs(pointMeasure - objectMeasure)
+            # newPoint.measure = pointMeasure
+            # finalParticles.append(newPoint)
+
+            # add radius fuzz
+            radius = sqrt(resampledPoints[i].position[0]**2 + resampledPoints[i].position[1]**2)
+            theta = atan2(resampledPoints[i].position[1], resampledPoints[i].position[0]) + random.uniform(-1*pi/16, pi/16)
+            x = radius * cos(theta)
+            y = radius * sin(theta)
+            radiusRand = Particle((x,y))
+            newPoint = resampledPoints[i].gaussianPoint(0.5)
+            radBody = Body(r=[AU * newPoint.position[0], AU * newPoint.position[1]], v=[0, 0], mass=0, measurement_noise=0)
+            radMeasure = radBody.compute_gravity_magnitude(planets=solar_system.planets)
+            newPoint.weight = 1 / abs(radMeasure - objectMeasure)
+            #newPoint.weight = Gaussian(radMeasure - objectMeasure, 0.5, objectMeasure)
             finalParticles.append(newPoint)
-    #
-    # # Step 4 - Fuzz particles
-    # # Generate some noise around particle
-    #
-    # # normal distribution around each particle???
-    #
-    #
+
+
     # # Step 5 - Move based on satellite motion
     # # ejected into circular counter-clockwide orbit around sun at position 0
     movedPoints = []
     for point in finalParticles:
-        newPoint = point.move() # rotates counter-clockwise based on radius
+        newPoint = point.moveBody() # rotates counter-clockwise based on radius
         movedPoints.append(newPoint)
-    #
-    #
+
+    movedPoints.sort(key=lambda x: x.weight, reverse=True)
+
     # newTimer = Timer(timer.time+1, finalParticles)
     # # Estimate
     # # want to pick best guess
-    maxWeight = 0
-    maxParticle = 0
-    top10particles = []
-    for particles in movedPoints:
-        if particles.weight > maxWeight:
-            maxWeight = particles.weight
-            maxParticle = particles
-        if len(top10particles) < 10:
-            top10particles.append(particles)
-        else:
-            minCurrent = top10particles[0].weight
-            minPart = top10particles[0]
-            for particle in top10particles:
-                if particle.weight < minCurrent:
-                    minCurrent = particle.weight
-                    minPart = particle
-            if particles.weight < minCurrent:
-                top10particles.remove(particle)
-                top10particles.append(particles)
+    # maxWeight = 0
+    # maxParticle = 0
+    # top10particles = []
+    # for particles in movedPoints:
+    #     if particles.weight > maxWeight:
+    #         maxWeight = particles.weight
+    #         maxParticle = particles
+    #     if len(top10particles) < 25:
+    #         top10particles.append(particles)
+    #     else:
+    #         minCurrent = top10particles[0].weight
+    #         minPart = top10particles[0]
+    #         for particle in top10particles:
+    #             if particle.weight < minCurrent:
+    #                 minCurrent = particle.weight
+    #                 minPart = particle
+    #         if particles.weight < minCurrent:
+    #             top10particles.remove(particle)
+    #             top10particles.append(particles)
+    maxParticle = movedPoints[0]
+
     # ### Loop back to step 2 (assign important weights to new particles
 
     # if not other:
@@ -208,22 +264,62 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
     # else:
     #     xyPart = other
     # movedPart = xyPart.move()
+    x = 0
+    y = 0
+    for point in movedPoints[:50]:
+        x += point.position[0]
+        y += point.position[1]
     xy_estimate = (maxParticle.position[0]*AU, maxParticle.position[1]*AU)#, movedPart.direction)
-    #xy_estimate = (2 * AU, 2 * AU)
-    #print(xy_estimate)
 
-    # You may optionally also return a list of (x,y,h) points that you would like
-    # the PLOT_PARTICLES=True visualizer to plot for visualization purposes.
-    # If you include an optional third value, it will be plotted as the heading
-    # of your particle.
-
+    # #print(xy_estimate)
+    #
+    # # You may optionally also return a list of (x,y,h) points that you would like
+    # # the PLOT_PARTICLES=True visualizer to plot for visualization purposes.
+    # # If you include an optional third value, it will be plotted as the heading
+    # # of your particle.
+    #
     optional_points_to_plot = []
-    for point in top10particles:
+
+    # want to initialize 1000 random points near object
+    # avgWeight = 0
+    # for i in range(500):
+    #     randNumX = random.random() * 8 - 4
+    #     randNumY = random.random() * 8 - 4
+    #     pointBody = Body(r=[AU * randNumX, AU *  randNumY], v=[0, 0], mass=0, measurement_noise=00)
+    #     pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+    #     avgWeight += 1 / abs(pointMeasure - objectMeasure)  # take reciprocal s.t. weight large
+    # avgWeight /= 500
+    # for i in range(200):
+    #     weight = 0
+    #     x = 0
+    #     y = 0
+    #     while weight < avgWeight * 2:
+    #         randNumX = random.random() * 8 - 4
+    #         randNumY = random.random() * 8 - 4
+    #         pointBody = Body(r=[AU * randNumX, AU * randNumY], v=[0, 0], mass=0, measurement_noise=00)
+    #         pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+    #         weight = 1 / abs(pointMeasure - objectMeasure)  # take reciprocal s.t. weight large
+    #     optional_points_to_plot.append((randNumX*AU, randNumY*AU))
+    # optional_points_to_plot = []
+    for point in movedPoints[:100]:
         optional_points_to_plot.append((point.position[0]*AU, point.position[1]*AU, point.direction))
     #optional_points_to_plot = [(1*AU, 1*AU), (2*AU, 2*AU), (3*AU, 3*AU)]  # Sample (x,y) to plot
     #optional_points_to_plot = [(1*AU, 1*AU, 0.5), (2*AU, 2*AU, 1.8), (3*AU, 3*AU, 3.2)]  # (x,y,heading)
+    #movedTest = testPoint.move()
+    #optional_points_to_plot.append((movedTest.position[0]*AU, movedTest.position[1]*AU, movedTest.direction))
+    # for i in range(10):
+    #     newPoint = testPoint.gaussianPoint(0.02)
+    #     pointBody = Body(r=[AU * newPoint.position[0], AU * newPoint.position[1]], v=[0, 0], mass=0,
+    #                      measurement_noise=0)
+    #     pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
+    #     newPoint.weight = 1 / abs(pointMeasure - objectMeasure)
+    #     newPoint.measure = pointMeasure
+    #     movedNew = newPoint.move()
+    #     optional_points_to_plot.append((movedNew.position[0]*AU, movedNew.position[1]*AU, movedNew.direction))
+    timer = Timer(time, movedPoints)
+    #movedParticle = singleParticle.move()
 
-    return xy_estimate, movedPoints, optional_points_to_plot
+    return xy_estimate, timer, optional_points_to_plot
 
 
 def next_angle(solar_system, gravimeter_measurement, other=None):
@@ -253,7 +349,7 @@ def next_angle(solar_system, gravimeter_measurement, other=None):
 
     return bearing, estimate, other
 
-def Gaussian(self, mu, sigma, x):
+def Gaussian(mu, sigma, x):
     # calculates the probability of x for 1-dim Gaussian with mean mu and var. sigma
     return exp(- ((mu - x) ** 2) / (sigma ** 2) / 2.0) / sqrt(2.0 * pi * (sigma ** 2))
 
@@ -273,42 +369,57 @@ class Particle:
         self.weight = 1000
         self.angle = atan2(particlePosition[1], particlePosition[0])
         self.measure = 0
-        self.direction = atan2(particlePosition[1], particlePosition[0]) * pi/2
+        self.direction = atan2(particlePosition[1], particlePosition[0]) + pi/2
         self.normWeight = 0
 
     # move particle --- counterclockwise motion around radius
     def move(self):
+        #pointBody = Body(r=[AU * self.position[0], AU * self.position[1]], v=[0, 0], mass=0, measurement_noise=0)
+        #movedBody = pointBody.moveBody(planets)
+        # movedPart = Particle((movedBody.r[0], movedBody.r[1]))
+        # movedPart.weight = self.weight
         radius = sqrt(self.position[0]**2 + self.position[1]**2)
         heading = self.direction
         vMag = sqrt(G * 1.98847e30)
-        arcMeasure = vMag / radius
+        # velocity_magnitude = vMag / sqrt(radius * AU)  # m/s
+        # heading = heading + pi / 2  # perpendicular
+        # velocity_x = velocity_magnitude * cos(heading) / AU
+        # velocity_y = velocity_magnitude * sin(heading) / AU
+        #vMag2 = sqrt(G * 1.98847e30 / (radius * AU))
+        arcMeasure = vMag / (radius * AU)
         newAngle = self.angle + arcMeasure
         newPositionX = radius * math.cos(newAngle)
         newPositionY = radius * math.sin(newAngle)
         #heading = atan2(self.position[1], self.position[0]) * pi/2
-        #vMag = 0.1
-        #direction = heading
-        velocityX = vMag * cos(heading) / AU
-        velocityY = vMag * sin(heading) / AU
-        print(heading, velocityX, velocityY)
-        #position = (self.position[0]+velocityX, self.position[1]+velocityY)
+        #velocityX = vMag * math.cos(heading) / radius
+        #velocityY = vMag * math.cos(heading) / radius
+        #print(heading, velocityX, velocityY)
+        #position = (self.position[0]+velocity_x, self.position[1]+velocity_y)
         position = (newPositionX, newPositionY)
         movedPart = Particle(position)
         movedPart.weight = self.weight
         return movedPart
 
-        # # velocity juts given in m/s --- need to calculate along radial path
-        # arcMeasure = vMag / radius
-        # newAngle = self.angle + arcMeasure
-        # newPositionX = radius * math.cos(newAngle)
-        # newPositionY = radius * math.sin(newAngle)
-        # self.direction = (newPositionY - self.position[1]) / (newPositionX - self.position[0])
-        # self.position = (newPositionX, newPositionY)
+    def moveBody(self):
+        x = self.position[0]
+        y = self.position[1]
+        radius_body = sqrt(x ** 2 + y ** 2)
+        angle = atan2(y, x)
+        velocity_magnitude = sqrt(G * 1.98847e30 / radius_body)  # m/s
+        heading = angle + pi / 2  # perpendicular
+        velocity_x = velocity_magnitude * cos(heading)
+        velocity_y = velocity_magnitude * sin(heading)
+        newX = x + (velocity_x / AU)
+        newY = y + (velocity_y / AU)
+        movedParticle = Particle((newX, newY))
+        movedParticle.weight = self.weight
+        return movedParticle
 
     def gaussianPoint(self, distance):
         newPositionX = self.position[0] + random.uniform(-1 * distance, distance)
         newPositionY = self.position[1] + random.uniform(-1 * distance, distance)
         return Particle((newPositionX, newPositionY))
+
 
 # iteration
 class Timer:
