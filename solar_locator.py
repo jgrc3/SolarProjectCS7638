@@ -60,6 +60,11 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
     timer = other
     objectMeasure = gravimeter_measurement
     samplePoints = []
+    # for i in range(1000):
+    #     randNumX = random.random() * 8 - 4
+    #     randNumY = random.random() * 8 - 4
+    #     thisPoint = Particle((randNumX, randNumY))
+    #     samplePoints.append(thisPoint)
     if not timer:
         # want to initialize 1000 random points near object
         for i in range(10000):
@@ -98,7 +103,7 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
         #     thisPoint = Particle((x, y))
         #    samplePoints.append(thisPoint)
         time = timer.time + 1
-        #print(len(samplePoints))
+    #     #print(len(samplePoints))
     #
     # # samplePoints = []
     # # timer = other
@@ -133,8 +138,8 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
         pointMeasure = pointBody.compute_gravity_magnitude(planets=solar_system.planets)
         ### weight needs to be gaussian!!!
         point.weight = 1 / abs(pointMeasure - objectMeasure)
-        #point.weight = Gaussian(pointMeasure - objectMeasure, 0.01, objectMeasure)  # take reciprocal s.t. weight large
-        point.measure = pointMeasure
+        point.weight = Gaussian(pointMeasure, 0.1, objectMeasure)  # take reciprocal s.t. weight large
+        #point.measure = pointMeasure
         #print(pointMeasure)
     #
     #
@@ -156,7 +161,7 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
 
     #print(norms)
     # resampling wheel
-    N = 500
+    N = 100
     resampledPoints = []
     index = int(random.random() * N)
     beta = 0.0
@@ -216,11 +221,11 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
             x = radius * cos(theta)
             y = radius * sin(theta)
             radiusRand = Particle((x,y))
-            newPoint = resampledPoints[i].gaussianPoint(0.5)
+            newPoint = radiusRand.gaussianPoint(0.2)
             radBody = Body(r=[AU * newPoint.position[0], AU * newPoint.position[1]], v=[0, 0], mass=0, measurement_noise=0)
             radMeasure = radBody.compute_gravity_magnitude(planets=solar_system.planets)
-            newPoint.weight = 1 / abs(radMeasure - objectMeasure)
-            #newPoint.weight = Gaussian(radMeasure - objectMeasure, 0.5, objectMeasure)
+            #newPoint.weight = 1 / abs(radMeasure - objectMeasure)
+            newPoint.weight = Gaussian(radMeasure, 0.1, objectMeasure)
             finalParticles.append(newPoint)
 
 
@@ -259,16 +264,6 @@ def estimate_next_pos(solar_system, gravimeter_measurement, other=None):
 
     # ### Loop back to step 2 (assign important weights to new particles
 
-    # if not other:
-    #     xyPart = Particle((2,2))
-    # else:
-    #     xyPart = other
-    # movedPart = xyPart.move()
-    x = 0
-    y = 0
-    for point in movedPoints[:50]:
-        x += point.position[0]
-        y += point.position[1]
     xy_estimate = (maxParticle.position[0]*AU, maxParticle.position[1]*AU)#, movedPart.direction)
 
     # #print(xy_estimate)
